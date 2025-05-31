@@ -1,31 +1,30 @@
 import os
-import random
 import json
-from aiogram import Bot, Dispatcher, types, executor
+import random
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
 from dotenv import load_dotenv
 
-# .env faylni o‘qish (agar fayl nomi api.env bo‘lsa, shu faylni ko‘rsatamiz)
-load_dotenv(dotenv_path="api.env")
+load_dotenv()
 
 API_TOKEN = os.getenv("API_TOKEN")
-if not API_TOKEN:
-    raise ValueError("API_TOKEN .env faylidan o'qilmadi!")
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-users_file = "data/users.json"
+# Create data directory if not exists
+if not os.path.exists("data"):
+    os.makedirs("data")
+if not os.path.exists("data/users.json"):
+    with open("data/users.json", "w") as f:
+        json.dump({}, f)
 
-# Foydalanuvchilar ma'lumotini yuklash
-if os.path.exists(users_file):
-    with open(users_file, "r", encoding="utf-8") as f:
-        users = json.load(f)
-else:
-    users = {}
+with open("data/users.json", "r") as f:
+    users = json.load(f)
 
 def save_users():
-    with open(users_file, "w", encoding="utf-8") as f:
-        json.dump(users, f, ensure_ascii=False, indent=4)
+    with open("data/users.json", "w") as f:
+        json.dump(users, f)
 
 @dp.message_handler(commands=['start'])
 async def start_game(message: types.Message):
@@ -54,11 +53,8 @@ async def jump(message: types.Message):
         txt = "😐 Joyida qoldingiz..."
         img = "data/images/stay.jpg"
     save_users()
-    try:
-        with open(img, "rb") as photo:
-            await bot.send_photo(chat_id=message.chat.id, photo=photo, caption=f"{txt} Pog‘ona: {users[uid]['level']}")
-    except FileNotFoundError:
-        await message.answer(f"{txt} Pog‘ona: {users[uid]['level']} (rasm topilmadi)")
+    with open(img, "rb") as photo:
+        await bot.send_photo(chat_id=message.chat.id, photo=photo, caption=f"{txt} Pog‘ona: {users[uid]['level']}")
 
 @dp.message_handler(commands=['profil'])
 async def profile(message: types.Message):
